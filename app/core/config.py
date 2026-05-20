@@ -1,4 +1,5 @@
 import os
+import traceback
 from typing import List, Any, Union
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -50,6 +51,7 @@ class SariqxConfigSchema(BaseSettings):
                 try:
                     return json.loads(value_stripped)
                 except Exception:
+                    logger.opt(exception=True).warning("Failed to parse list-like environment value as JSON; falling back to comma parsing.")
                     pass
             
             if value_stripped == "*":
@@ -84,6 +86,7 @@ def load_sariqx_config() -> None:
         logger.info(f"📋 Pydantic fully parsed and type-casted {len(clean_payload)} system variables into Collector.")
         
     except Exception as err:
-        logger.critical(f"💥 CONFIGURATION CRASH: Pydantic validation failed for environment parameters!")
+        logger.opt(exception=True).critical("💥 CONFIGURATION CRASH: Pydantic validation failed for environment parameters!")
         print(f"\n[PYDANTIC ENFORCED EXCEPTION TRACKER]:\n{err}\n", flush=True)
+        traceback.print_exc()
         raise SystemExit(1)

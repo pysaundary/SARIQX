@@ -39,7 +39,7 @@ class SARIQXMongoManager:
             logger.info(f"💾 MongoDB Engine bound successfully to core workspace: '{main_db_name}'")
             
         except Exception as e:
-            logger.critical(f"💥 Failed to instantiate Motor Client connection state: {e}")
+            logger.opt(exception=True).critical(f"💥 Failed to instantiate Motor Client connection state: {e}")
             raise
 
     async def close_pool(self) -> None:

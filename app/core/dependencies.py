@@ -71,10 +71,18 @@ async def get_current_user(
             
         return payload 
         
+    except HTTPException:
+        raise
     except ValueError as err:
         logger.error(f"🛡️ Auth Guard Trace: Verification failed: {err}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token signature has expired or is invalid.",
             headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as err:
+        logger.exception(f"💥 Auth Guard crashed during protected route verification: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal authentication guard failure.",
         )

@@ -1,4 +1,5 @@
 import logging
+import traceback
 from multiprocessing import Queue
 from loguru import logger
 
@@ -25,10 +26,24 @@ def setup_app_logging_client(queue: Queue):
     FastAPI worker thread start hote hi isko call karenge.
     Yeh standard uvicorn loggers ka gala ghotega aur unhe queue mein divert karega.
     """
+    def queue_loguru_message(message):
+        try:
+            record = message.record
+            rendered_message = record["message"]
+            if record["exception"]:
+                rendered_message = (
+                    f"{rendered_message}\n"
+                    f"{''.join(traceback.format_exception(record['exception'].type, record['exception'].value, record['exception'].traceback)).rstrip()}"
+                )
+
+            queue.put_nowait({"level": record["level"].name, "message": rendered_message})
+        except Exception:
+            traceback.print_exc()
+
     # 1. Main process ke loguru ko config karo ki wo sirf queue mein push kare
     logger.remove()
     logger.add(
-        lambda msg: queue.put_nowait({"level": msg.record["level"].name, "message": msg.record["message"]}),
+        queue_loguru_message,
         level="INFO",
         colorize=False
     )

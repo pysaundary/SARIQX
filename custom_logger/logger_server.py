@@ -1,5 +1,6 @@
 import sys
 import signal
+import traceback
 from multiprocessing import Queue
 from loguru import logger
 
@@ -53,6 +54,7 @@ def logger_worker_process(queue: Queue, log_file_path: str = "logs/sariqx.log"):
             
         except Exception as e:
             print(f"CRITICAL ERROR IN SARIQX LOGGER SERVER: {e}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
             break
 
     # Loop ke bahar aane par resource cleanup confirmation

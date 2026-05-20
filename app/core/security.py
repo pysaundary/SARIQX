@@ -21,10 +21,14 @@ def hash_password(password: str) -> str:
     """
     Plain-text password ko adaptive work-factor ke sath secure multi-hash blob mein badalna.
     """
-    pwd_bytes = password.encode('utf-8')
-    # gensalt() default rounds=12 hold karta hai jo hardware performance ke liye optimal hai
-    hashed = hashpw(pwd_bytes, gensalt())
-    return hashed.decode('utf-8')
+    try:
+        pwd_bytes = password.encode('utf-8')
+        # gensalt() default rounds=12 hold karta hai jo hardware performance ke liye optimal hai
+        hashed = hashpw(pwd_bytes, gensalt())
+        return hashed.decode('utf-8')
+    except Exception as e:
+        logger.exception(f"🛡️ Password hashing pipeline crashed: {e}")
+        raise
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -34,7 +38,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
         return checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
     except Exception as e:
-        logger.error(f"🛡️ Cryptographic identification failure during password matching: {e}")
+        logger.exception(f"🛡️ Cryptographic identification failure during password matching: {e}")
         return False
 
 
@@ -62,8 +66,12 @@ def create_access_token(payload: Dict[str, Any], expires_delta: Optional[timedel
         "iat": datetime.now(timezone.utc) # Issued At Time
     })
     
-    encoded_jwt = jwt.encode(to_encode, _get_jwt_secret(), algorithm=_get_jwt_algorithm())
-    return encoded_jwt
+    try:
+        encoded_jwt = jwt.encode(to_encode, _get_jwt_secret(), algorithm=_get_jwt_algorithm())
+        return encoded_jwt
+    except Exception as e:
+        logger.exception(f"🎫 Access token creation crashed: {e}")
+        raise
 
 
 def create_refresh_token(payload: Dict[str, Any]) -> str:
@@ -81,8 +89,12 @@ def create_refresh_token(payload: Dict[str, Any]) -> str:
         "iat": datetime.now(timezone.utc)
     })
     
-    encoded_jwt = jwt.encode(to_encode, _get_jwt_secret(), algorithm=_get_jwt_algorithm())
-    return encoded_jwt
+    try:
+        encoded_jwt = jwt.encode(to_encode, _get_jwt_secret(), algorithm=_get_jwt_algorithm())
+        return encoded_jwt
+    except Exception as e:
+        logger.exception(f"🎫 Refresh token creation crashed: {e}")
+        raise
 
 
 # ==============================================================================
