@@ -6,8 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import text
+from app.db.postgres import get_async_engine
+from app.db.mongo import mongo_manager
+from app.models.auth import Base 
+from app.models.doubt import Question, Answer, Attachment
 
-# ⚡ Global High-Velocity Event Loop Installation at the Absolute Entrypoint
 uvloop.install()
 
 from app.core.logger_client import setup_app_logging_client
@@ -118,7 +121,9 @@ app.add_middleware(
 
 # 🚀 Include System Auth Routers
 from app.api.v1.auth import router as auth_router
+from app.api.v1.doubts import router as doubt_router
 app.include_router(auth_router, prefix="/api/v1")
+app.include_router(doubt_router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -49,6 +49,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(payload: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """
     O(1) look-up capability ke sath short-lived Access Token compile karna.
+    Custom action types (email_verification, password_reset) support added.
     """
     to_encode = payload.copy()
     
@@ -59,20 +60,19 @@ def create_access_token(payload: Dict[str, Any], expires_delta: Optional[timedel
         minutes = collector.get("ACCESS_TOKEN_EXPIRE_MINUTES", 30)
         expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
     
+    # ⚡ THE MASTER FIX: Agar payload mein pehle se "type" hai, toh use maintain karo, 
+    # warna default "access" assign kar do.
+    token_type = payload.get("type", "access")
+    
     # Token metadata payloads injected strictly
     to_encode.update({
         "exp": expire,
-        "type": "access",
+        "type": token_type,
         "iat": datetime.now(timezone.utc) # Issued At Time
     })
     
-    try:
-        encoded_jwt = jwt.encode(to_encode, _get_jwt_secret(), algorithm=_get_jwt_algorithm())
-        return encoded_jwt
-    except Exception as e:
-        logger.exception(f"🎫 Access token creation crashed: {e}")
-        raise
-
+    encoded_jwt = jwt.encode(to_encode, _get_jwt_secret(), algorithm=_get_jwt_algorithm())
+    return encoded_jwt
 
 def create_refresh_token(payload: Dict[str, Any]) -> str:
     """

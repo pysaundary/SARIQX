@@ -40,3 +40,7 @@ class UserResponseSchema(BaseModel):
     
     class Config:
         from_attributes = True
+        
+class RefreshTokenRequestSchema(BaseModel):
+    refresh_token: str = Field(..., min_length=10)
+    
