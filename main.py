@@ -10,6 +10,7 @@ from app.db.postgres import get_async_engine
 from app.db.mongo import mongo_manager
 from app.models.auth import Base 
 from app.models.doubt import Question, Answer, Attachment
+from fastapi.staticfiles import StaticFiles
 
 uvloop.install()
 
@@ -103,7 +104,9 @@ app = FastAPI(
 
 # 🔄 Lazy loading of Middlewares after app initialization to prevent race conditions
 from app.core.collector import collector
-
+import os
+os.makedirs("media", exist_ok=True)
+app.mount("/media", StaticFiles(directory="media"), name="media")
 # 🔐 SECURITY MIDDLEWARE LEVEL 1: Trusted Host Guard via Pydantic Caching
 app.add_middleware(
     TrustedHostMiddleware, 
@@ -122,8 +125,12 @@ app.add_middleware(
 # 🚀 Include System Auth Routers
 from app.api.v1.auth import router as auth_router
 from app.api.v1.doubts import router as doubt_router
+from app.api.v1.answers import router as answer_router
+from app.api.v1.attachments import router as attachment_router
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(doubt_router, prefix="/api/v1")
+app.include_router(answer_router, prefix="/api/v1")
+app.include_router(attachment_router, prefix="/api/v1")
 
 
 @app.get("/")

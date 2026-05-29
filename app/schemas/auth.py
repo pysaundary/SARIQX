@@ -33,6 +33,7 @@ class UserResponseSchema(BaseModel):
     id: uuid.UUID
     tenant_id: Optional[uuid.UUID]
     email: EmailStr
+    username: str
     full_name: str
     role: UserRole
     is_active: bool

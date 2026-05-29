@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.17.2",
     "asyncpg>=0.31.0",
     "bcrypt>=5.0.0",
     "celery>=5.6.3",
@@ -19,4 +20,6 @@ dependencies = [
     "uvicorn>=0.47.0",
     "uvloop>=0.22.1",
     "httpx>=0.28.1",
+    "python-multipart>=0.0.29",
+    "pillow>=12.2.0",
 ]

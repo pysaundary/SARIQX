@@ -5,6 +5,10 @@ from bcrypt import hashpw, gensalt, checkpw
 from app.core.collector import collector
 from loguru import logger
 
+class TokenExpiredError(ValueError):
+    """Raised when a JWT is structurally valid but expired."""
+
+
 # Helper functions to safely extract JWT configs from Pydantic Matrix via Collector
 def _get_jwt_secret() -> str:
     return collector.get("JWT_SECRET_KEY", "SARIQX_EMERGENCY_FALLBACK_2026")
@@ -116,7 +120,7 @@ def decode_token(token: str) -> Dict[str, Any]:
         
     except jwt.ExpiredSignatureError:
         logger.warning("🎫 Token Verification Block: Passed token string has expired signature bounds.")
-        raise ValueError("Token signature has expired.")
+        raise TokenExpiredError("Token signature has expired.")
         
     except jwt.InvalidTokenError as err:
         logger.error(f"🚫 Token Interception Security Alert: Invalid token parsing attempt detected: {err}")

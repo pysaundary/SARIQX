@@ -9,6 +9,8 @@ from loguru import logger
 from app.services.email import BrevoEmailService
 from fastapi.responses import HTMLResponse
 from app.schemas.auth import RefreshTokenRequestSchema
+import re
+import uuid
 
 router = APIRouter(prefix="/auth", tags=["SARIQX Core Authentication Engine"])
 
@@ -59,10 +61,13 @@ async def register_pipeline(payload: UserRegisterSchema, background_tasks: Backg
             await db.flush() # Flushes memory state to fetch generated tenant UUID safely
             assigned_tenant_id = new_tenant.id
             logger.info(f"🏢 Multi-Tenant Matrix: Provisioned fresh tenant partition: {new_tenant.subdomain}")
-
+        new_user_id = uuid.uuid4()
+        safe_username = generate_unique_username(payload.email, new_user_id)
         # 3. Create and Encrypt User Instance
         new_user = User(
+            id=new_user_id,
             tenant_id=assigned_tenant_id,
+            username=safe_username,               
             email=payload.email.lower().strip(),
             hashed_password=hash_password(payload.password),
             full_name=payload.full_name,
@@ -265,3 +270,23 @@ async def refresh_access_token(payload: RefreshTokenRequestSchema, db: AsyncSess
             detail="INVALID_REFRESH_TOKEN", # Frontend will catch this and FORCE LOGOUT
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+        
+def generate_unique_username(email: str, user_id: uuid.UUID) -> str:
+    """
+    Generates a guaranteed unique username by appending a chunk 
+    of the user's UUID to their slugified email base.
+    """
+    # 1. Base email extract and slugify
+    base_name = email.split("@")[0].lower()
+    slug = re.sub(r'[^a-z0-9]', '_', base_name)
+    slug = re.sub(r'_+', '_', slug).strip('_')
+    
+    # 2. Extract last 8 characters from the UUID string
+    # UUID looks like: 123e4567-e89b-12d3-a456-426614174000
+    uuid_suffix = str(user_id).split('-')[-1][:8] 
+    
+    # 3. Combine them
+    return f"{slug}_{uuid_suffix}"
+        
+        

@@ -3,11 +3,12 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from loguru import logger
-import jwt  # ⚡ Import JWT to catch specific library errors
+from app.services.storage import StorageProvider, LocalStorageProvider, S3StorageProvider
+from app.core.collector import collector
 
 from app.db.postgres import get_postgres_session
 from app.models.auth import User
-from app.core.security import decode_token
+from app.core.security import TokenExpiredError, decode_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -27,7 +28,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         if user_id is None:
             raise ValueError("User ID missing in payload.")
             
-    except jwt.ExpiredSignatureError:
+    except TokenExpiredError:
         # ⚡ FRONTEND SIGNAL 1: Token specifically expired. 
         # Svelte will catch this "TOKEN_EXPIRED" and fire the refresh token API silently.
         logger.warning("🛡️ Auth Intercept: Access token expired.")
@@ -58,3 +59,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         )
         
     return user
+
+def get_storage_provider() -> StorageProvider:
+    """
+    Dependency Factory: Returns the correct storage strategy based on environment settings.
+    No endpoint code needs to change when migrating from Local to S3.
+    """
+    provider_type = collector.get("STORAGE_PROVIDER", "local").lower()
+    
+    if provider_type == "s3":
+        return S3StorageProvider()
+        
+    # Default fallback is Local Media Folder
+    return LocalStorageProvider()
